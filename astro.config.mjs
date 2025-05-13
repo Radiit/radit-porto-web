@@ -6,7 +6,7 @@ import solidJs from "@astrojs/solid-js"
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://radiit.github.io/radit-porto-web",
-  base: "/radit-porto-web/",
+  site: "https://radit.github.io/porto-radit",
+  base: "/porto-radit/",
   integrations: [mdx(), sitemap(), solidJs(), tailwind({ applyBaseStyles: false })],
 })
