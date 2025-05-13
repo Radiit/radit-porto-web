@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <symbol id="brand" viewBox="0 0 339 293">
+      <style>
+        /* Fallback if external CSS is not applied */
+        .light-mode { display: block; }
+        .dark-mode { display: none; }
+        @media (prefers-color-scheme: dark) {
+          .light-mode { display: none; }
+          .dark-mode { display: block; }
+        }
+      </style>
+      <g class="light-mode">
+        <image href="/brand-white.png" x="0" y="0" width="339" height="293" />
+      </g>
+      <g class="dark-mode">
+        <image href="/brand-black.png" x="0" y="0" width="339" height="293" />
+      </g>
+    </symbol>
+  </defs>
+</svg>

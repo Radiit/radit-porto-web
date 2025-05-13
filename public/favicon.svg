@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 339 293">
+  <style>
+    .light-mode { display: block; }
+    .dark-mode { display: none; }
+    @media (prefers-color-scheme: dark) {
+      .light-mode { display: none; }
+      .dark-mode { display: block; }
+    }
+  </style>
+  <g class="light-mode">
+    <image href="/brand-black.png" width="339" height="293" />
+  </g>
+  <g class="dark-mode">
+    <image href="/brand-white.png" width="339" height="293" />
+  </g>
+</svg>
