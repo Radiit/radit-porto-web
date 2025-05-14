@@ -23,5 +23,10 @@ RUN pnpm build
 # Expose port 4321
 EXPOSE 4321
 
-# Start the application in preview mode on port 4321
-CMD ["pnpm", "preview", "--host", "0.0.0.0", "--port", "4321"] 
+# Set environment variables for preview mode
+ENV HOST=0.0.0.0
+ENV PORT=4321
+ENV BASE_URL=/
+
+# Start the application in preview mode
+CMD ["pnpm", "preview", "--host"] 
