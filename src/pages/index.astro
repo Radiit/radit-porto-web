@@ -95,6 +95,12 @@ const stack = [
             <a href='/work' class='py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend'>
               View my work
             </a>
+            <!-- <a href="/CV-Radit.pdf" download class="py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend flex items-center gap-2">
+              <svg class="size-4 fill-current">
+                <use href="/ui.svg#download"></use>
+              </svg>
+              <span>See my latest CV</span>
+            </a> -->
           </div>
         </div>
       </div>
@@ -107,26 +113,28 @@ const stack = [
       <!-- About Section -->
       <section class="animate">
         <article>
-          <p>I'm a <b><i>software engineer</i></b> with <b><i>a designer's eye, a product thinker's mind, and a hacker's curiosity</i></b>. I thrive at the intersection of code, creativity, and chaos.</p>
-          
-          <p>Over the years,</p>
-          <p>I've built digital products across industries — from <b>community-driven platforms tackling real-world problems like waste management</b>, to <b>enterprise-grade SaaS solutions</b>. I bring ideas to life using <b>Golang, Node.js, Spring Boot, and modern frontend stacks</b> — always keeping performance, security, and user delight in focus.</p>
-          
+          <p>I'm a <b><i>software engineer</i></b> with <b><i>a designer's eye, a product thinker's mind, and a hacker's curiosity</i></b>. I thrive at the intersection of code, creativity, and chaos — building things that matter while staying curious about how they can be better.</p>
+
+          <p><b>In the past,</b></p>
+          <p>I've built digital products across industries — from <b>community-driven platforms tackling real-world problems like waste management</b>, to <b>enterprise-grade SaaS solutions</b>. My tools of choice? <b>Golang, Node.js, Spring Boot</b>, and modern frontend stacks — always keeping performance, security, and user experience in focus.</p>
+
           <p><b>Right now,</b></p>
-          <p>I'm <b>Co-Founder & CTO of Redooceit</b>, a tech startup reimagining waste management through community and innovation. I lead the tech side — from ideation to deployment, cloud infrastructure to clean code — ensuring we scale sustainably while making an impact. Also co-founding <b>Cendana Tech Solutions</b> and actively working on a few other projects as a backend engineer.</p>
-          
-          <p><b>When I'm not coding</b> or scrambling on Qwen AI,</p>
-          <p>you'll find me deep-diving into CS:GO premier matchmaking, finding a good video on YouTube, or completing the list of books that I haven't finished yet.</p>
-          
-          <p><b>And You know what?</b></p>
+          <p>I'm <b>Co-Founder & CTO of Redooceit</b>, a tech startup reimagining waste management through community and innovation. I lead the tech side — from ideation to deployment, cloud infrastructure to clean code — ensuring we scale sustainably while making an impact. I'm also co-founding <b>Cendana Tech Solutions</b> and actively working on a few other backend-focused projects.</p>
+
+          <p><b>In the future,</b></p>
+          <p>I want to keep building systems that solve meaningful problems — whether it's through open-source contributions, scalable infrastructures, or even diving deeper into Web3 and decentralized solutions. I believe technology should empower people, not complicate it.</p>
+
+          <p><b>BUT! When I'm not coding</b> or scrambling on Qwen AI,</p>
+          <p>You'll find me deep-diving into CS:GO Premier matchmaking, scrolling endlessly on YouTube for interesting videos, or trying (and failing) to finish the long list of books I've started.</p>
+
+          <p><b>And you know what?</b></p>
           <p>I still feel like I don't know anything — about tech, about life. But maybe that's the point. That feeling keeps me curious, hungry to learn, and always open to being wrong. And honestly? I think that's my superpower.</p>
-          
-          <p>Last but not least, my dad once told me:</p>
+
+          <p>Last but not least, my dada once told me:</p>
           <blockquote>"Just keep moving. Do whatever you can, but never forget to make a real impact — one person at a time."</blockquote>
-          
+
           <p><b>Hit me up!</b></p>
           <p>Let's build something that matters.</p>
-
         </article>
       </section>
 
@@ -230,3 +238,33 @@ const stack = [
     </div>
   </div>
 </PageLayout>
+
+<!-- Floating CV Button -->
+<div class="fixed bottom-8 right-8 z-50 animate-float">
+  <a 
+    href="/Raditya_Aydin_CV.pdf" 
+    download 
+    class="flex items-center justify-center gap-3 h-14 rounded-full px-6 
+    bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700
+    dark:from-blue-500 dark:to-purple-500 dark:hover:from-blue-600 dark:hover:to-purple-600
+    text-white shadow-lg hover:shadow-xl transform hover:translate-y-[-2px] 
+    transition-all duration-300 ease-in-out border border-white/20
+    group relative overflow-hidden"
+  >
+    <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-400/40 to-purple-400/40 
+    opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+    
+    <div class="relative z-10 bg-white/30 dark:bg-white/20 p-2 rounded-full flex items-center justify-center
+    group-hover:bg-white/40 transition-colors duration-300">
+      <svg class="size-5 fill-current text-white">
+        <use href="/ui.svg#download"></use>
+      </svg>
+    </div>
+    
+    <span class="font-semibold relative z-10">See my latest CV</span>
+  </a>
+  
+  <!-- Attention ring animation -->
+  <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-70
+  blur-sm animate-pulse-soft -z-10"></div>
+</div>

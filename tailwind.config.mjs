@@ -25,6 +25,8 @@ export default {
       animation: {
         twinkle: "twinkle 2s ease-in-out forwards",
         meteor: "meteor 3s ease-in-out forwards",
+        "pulse-soft": "pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "float": "float 3s ease-in-out infinite",
       },
       keyframes: {
         twinkle: {
@@ -54,6 +56,22 @@ export default {
             transform: "translateY(0)" 
           },
         },
+        "pulse-soft": {
+          "0%, 100%": { 
+            opacity: 0.7,
+          },
+          "50%": { 
+            opacity: 0.4
+          }
+        },
+        "float": {
+          "0%, 100%": { 
+            transform: "translateY(0)"
+          },
+          "50%": { 
+            transform: "translateY(-10px)"
+          }
+        }
       },
     },
   },
