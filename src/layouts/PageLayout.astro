@@ -12,14 +12,17 @@ import { SITE } from "@consts"
 <html lang="en">
   <head>
     <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-QS0DB4N3L9"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-QS0DB4N3L9');
-  </script>
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-QS0DB4N3L9"></script>
+    <script is:inline>
+      // @ts-ignore
+      window.dataLayer = window.dataLayer || [];
+      // @ts-ignore
+      function gtag(){dataLayer.push(arguments);}
+      // @ts-ignore
+      gtag('js', new Date());
+      // @ts-ignore
+      gtag('config', 'G-QS0DB4N3L9');
+    </script>
     <BaseHead title={`${title} | ${SITE.TITLE}`} description={description} />
   </head>
   <body>
