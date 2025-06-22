@@ -1,0 +1,16 @@
+{
+  "apps": [{
+    "name": "landing-page:demo",
+    "script": "node",
+    "args": "./dist/server/entry.mjs",
+    "cwd": "./",
+    "instances": "1",
+    "exec_mode": "fork",
+    "env": {
+      "NODE_ENV": "production",
+      "HOST": "0.0.0.0",
+      "PORT": "4321"
+    },
+    "max_memory_restart": "1G"
+  }]
+} 
