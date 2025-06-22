@@ -2,7 +2,7 @@
 #
 # To get started with Astro see: https://docs.astro.build/en/getting-started/
 #
-name: Deploy Astro site to Pages and PM2
+name: Deploy Astro site to VPS
 
 on:
   # Runs on pushes targeting the default branch
@@ -29,89 +29,34 @@ env:
   NODE_ENV: "production"
 
 jobs:
-  build:
-    name: Build and Deploy
+  deploy:
+    name: Deploy to VPS
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Detect package manager
-        id: detect-package-manager
-        run: |
-          if [ -f "${{ github.workspace }}/yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-            echo "command=install" >> $GITHUB_OUTPUT
-            echo "runner=yarn" >> $GITHUB_OUTPUT
-            echo "lockfile=yarn.lock" >> $GITHUB_OUTPUT
-            exit 0
-          elif [ -f "${{ github.workspace }}/package.json" ]; then
-            echo "manager=npm" >> $GITHUB_OUTPUT
-            echo "command=ci" >> $GITHUB_OUTPUT
-            echo "runner=npx --no-install" >> $GITHUB_OUTPUT
-            echo "lockfile=package-lock.json" >> $GITHUB_OUTPUT
-            exit 0
-          else
-            echo "Unable to determine package manager"
-            exit 1
-          fi
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
-          cache-dependency-path: ${{ env.BUILD_PATH }}/${{ steps.detect-package-manager.outputs.lockfile }}
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-      - name: Install dependencies
-        run: |
-          ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
-          npm install pm2 -g
-        working-directory: ${{ env.BUILD_PATH }}
-      - name: Build with Astro
-        run: |
-          ${{ steps.detect-package-manager.outputs.runner }} astro build \
-            --site "${{ steps.pages.outputs.origin }}" \
-            --base "${{ steps.pages.outputs.base_path }}"
-        working-directory: ${{ env.BUILD_PATH }}
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ env.BUILD_PATH }}/dist
-      - name: Setup PM2 Config
-        run: |
-          echo '{
-            "apps": [{
-              "name": "landing-page:demo",
-              "script": "node",
-              "args": "./dist/server/entry.mjs",
-              "cwd": "./",
-              "instances": "1",
-              "exec_mode": "fork",
-              "env": {
-                "NODE_ENV": "production",
-                "HOST": "0.0.0.0",
-                "PORT": "4321"
-              },
-              "max_memory_restart": "1G"
-            }]
-          }' > ecosystem.config.json
-        working-directory: ${{ env.BUILD_PATH }}
-      - name: Start/Reload PM2
-        run: |
-          pm2 delete "landing-page:demo" || true
-          pm2 start ecosystem.config.json --env production
-          pm2 save
-        working-directory: ${{ env.BUILD_PATH }}
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    name: Deploy
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: "43.134.87.90"
+          username: "root"
+          password: ${{ secrets.VPS_PASSWORD }}
+          source: "./*"
+          target: "/root/porto-radit"
+          
+      - name: Build and Start on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: "43.134.87.90"
+          username: "root"
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd /root/porto-radit
+            npm install
+            npm run build
+            npm install pm2 -g
+            pm2 delete "landing-page:demo" || true
+            pm2 start ecosystem.config.json --env production
+            pm2 save
+            pm2 startup
