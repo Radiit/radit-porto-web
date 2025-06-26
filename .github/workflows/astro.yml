@@ -65,6 +65,7 @@ jobs:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
+          command_timeout: "30m"
           script: |
             set -e
 
@@ -72,7 +73,7 @@ jobs:
             npm install -g pm2@latest
 
             echo "Stopping existing PM2 processes..."
-            pm2 delete radit-porto-web || true
+            pm2 delete all || true
             pm2 kill || true
 
             echo "Cleaning up port 5001..."
@@ -87,34 +88,28 @@ jobs:
             echo "Installing production dependencies..."
             npm ci --omit=dev
 
-            echo "Updating package.json scripts..."
-            node -e '
-              const fs = require("fs");
-              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-              if (!pkg.scripts) pkg.scripts = {};
-              pkg.scripts.preview = "astro preview --host 127.0.0.1 --port 5001";
-              fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
-            '
-
             echo "Creating PM2 ecosystem file..."
             cat > ecosystem.config.cjs << 'EOL'
             module.exports = {
               apps: [{
                 name: 'radit-porto-web',
                 cwd: '/var/www/radit-porto-web',
-                script: 'npm',
-                args: 'run preview',
+                script: './node_modules/astro/dist/cli/index.js',
+                args: 'preview --host 127.0.0.1 --port 5001',
                 env: {
                   NODE_ENV: 'production',
                   PORT: '5001'
                 },
                 watch: false,
-                autorestart: true
+                autorestart: true,
+                max_restarts: 5,
+                min_uptime: '5s'
               }]
             }
             EOL
 
             echo "Starting application with PM2..."
+            cd ${{ env.DEPLOY_PATH }}
             pm2 start ecosystem.config.cjs
 
             echo "Saving PM2 configuration..."
@@ -125,7 +120,7 @@ jobs:
             systemctl enable pm2-root || true
 
             echo "Waiting for application to start..."
-            sleep 10
+            sleep 5
 
             echo "Checking application status..."
             pm2 list
@@ -134,8 +129,7 @@ jobs:
             echo "Checking port status..."
             netstat -tlpn | grep 5001 || true
             
-            echo "Checking application logs..."
-            tail -n 50 /root/.pm2/logs/radit-porto-web-error.log || true
-            tail -n 50 /root/.pm2/logs/radit-porto-web-out.log || true
+            echo "Testing application..."
+            curl -v http://127.0.0.1:5001/ || true
             
             echo "Deployment complete!"
