@@ -13,5 +13,10 @@ export default defineConfig({
     host: true,
     allowedHosts: ["radit.is-a.dev"],
   },
+  preview: {
+    host: '127.0.0.1',
+    port: 5001,
+    allowedHosts: ["radit.is-a.dev"],
+  },
   integrations: [mdx(), sitemap(), solidJs(), tailwind({ applyBaseStyles: false })],
 })

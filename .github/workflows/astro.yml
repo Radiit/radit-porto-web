@@ -56,7 +56,7 @@ jobs:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "dist/,package.json,package-lock.json"
+          source: "dist/,package.json,package-lock.json,astro.config.mjs"
           target: "${{ env.DEPLOY_PATH }}"
           rm: true
           
@@ -71,7 +71,7 @@ jobs:
             cd ${{ env.DEPLOY_PATH }}
 
             # Cleanup old files but keep necessary ones
-            find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name '.' ! -name '..' -exec rm -rf {} +
+            find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name 'astro.config.mjs' ! -name '.' ! -name '..' -exec rm -rf {} +
 
             # Install production dependencies
             npm ci --production
@@ -81,31 +81,43 @@ jobs:
               npm install -g pm2
             fi
 
-            # Stop and delete any existing instances
-            pm2 delete "radit-porto-web" || true
+            # Create ecosystem file
+            cat > ecosystem.config.js << 'EOL'
+            module.exports = {
+              apps: [{
+                name: 'radit-porto-web',
+                cwd: '/var/www/radit-porto-web',
+                script: './node_modules/astro/astro.js',
+                args: 'preview --host 127.0.0.1 --port 5001',
+                env: {
+                  NODE_ENV: 'production',
+                  PORT: '5001'
+                },
+                watch: false,
+                autorestart: true
+              }]
+            }
+            EOL
+
+            # Stop any existing process
+            pm2 delete radit-porto-web || true
             
             # Clean up any old processes on port 5001
             if lsof -Pi :5001 -sTCP:LISTEN -t >/dev/null ; then
               kill -9 $(lsof -t -i:5001) || true
             fi
 
-            # Create ecosystem config for PM2
-            cat > ecosystem.config.js << 'EOL'
-            module.exports = {
-              apps: [{
-                name: 'radit-porto-web',
-                script: 'node_modules/.bin/astro',
-                args: 'preview --host 127.0.0.1 --port 5001',
-                env: {
-                  NODE_ENV: 'production'
-                }
-              }]
-            }
-            EOL
-
-            # Start new PM2 instance using ecosystem config
+            # Start with PM2
             pm2 start ecosystem.config.js
             
-            # Save PM2 configuration and ensure startup
+            # Save PM2 configuration
             pm2 save
-            pm2 startup
+
+            # Setup PM2 to start on system boot
+            pm2 startup | tail -n 1 | bash
+
+            # Verify the process is running
+            pm2 list
+            
+            # Check if the port is listening
+            netstat -tlpn | grep 5001
