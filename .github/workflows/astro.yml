@@ -28,6 +28,7 @@ env:
   NODE_VERSION: '20.x'
   PORT: 5001
   DEPLOY_PATH: '/var/www/radit-porto-web'
+  HOST: 'radit.is-a.dev'
 
 jobs:
   deploy:
@@ -55,7 +56,7 @@ jobs:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "dist/,package.json,package-lock.json"
+          source: "dist/,package.json,package-lock.json,astro.config.mjs"
           target: "${{ env.DEPLOY_PATH }}"
           rm: true
           
@@ -70,7 +71,7 @@ jobs:
             cd ${{ env.DEPLOY_PATH }}
 
             # Cleanup old files but keep necessary ones
-            find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name '.' ! -name '..' -exec rm -rf {} +
+            find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name 'astro.config.mjs' ! -name '.' ! -name '..' -exec rm -rf {} +
 
             # Install production dependencies
             npm ci --production
@@ -88,8 +89,12 @@ jobs:
               kill -9 $(lsof -t -i:5001) || true
             fi
 
-            # Start new PM2 instance
-            pm2 start npm --name "radit-porto-web" -- start -- --port ${{ env.PORT }} --host 0.0.0.0
+            # Set environment variables for the application
+            export HOST=${{ env.HOST }}
+            export PORT=${{ env.PORT }}
+
+            # Start new PM2 instance with environment variables
+            pm2 start npm --name "radit-porto-web" -- start -- --host ${{ env.HOST }} --port ${{ env.PORT }}
             
             # Save PM2 configuration and ensure startup
             pm2 save
