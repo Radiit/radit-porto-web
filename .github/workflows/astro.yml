@@ -56,7 +56,7 @@ jobs:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "dist/,package.json,package-lock.json,astro.config.mjs"
+          source: "dist/,package.json,package-lock.json"
           target: "${{ env.DEPLOY_PATH }}"
           rm: true
           
@@ -71,7 +71,7 @@ jobs:
             cd ${{ env.DEPLOY_PATH }}
 
             # Cleanup old files but keep necessary ones
-            find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name 'astro.config.mjs' ! -name '.' ! -name '..' -exec rm -rf {} +
+            find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name '.' ! -name '..' -exec rm -rf {} +
 
             # Install production dependencies
             npm ci --production
@@ -89,12 +89,22 @@ jobs:
               kill -9 $(lsof -t -i:5001) || true
             fi
 
-            # Set environment variables for the application
-            export HOST=${{ env.HOST }}
-            export PORT=${{ env.PORT }}
+            # Create ecosystem config for PM2
+            cat > ecosystem.config.js << 'EOL'
+            module.exports = {
+              apps: [{
+                name: 'radit-porto-web',
+                script: 'node_modules/.bin/astro',
+                args: 'preview --host 127.0.0.1 --port 5001',
+                env: {
+                  NODE_ENV: 'production'
+                }
+              }]
+            }
+            EOL
 
-            # Start new PM2 instance with environment variables
-            pm2 start npm --name "radit-porto-web" -- start -- --host ${{ env.HOST }} --port ${{ env.PORT }}
+            # Start new PM2 instance using ecosystem config
+            pm2 start ecosystem.config.js
             
             # Save PM2 configuration and ensure startup
             pm2 save
