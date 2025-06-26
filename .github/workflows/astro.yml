@@ -2,7 +2,7 @@
 #
 # To get started with Astro see: https://docs.astro.build/en/getting-started/
 #
-name: Deploy Astro site to VPS
+name: Deploy Astro site to Production
 
 on:
   # Runs on pushes targeting the default branch
@@ -25,38 +25,72 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  BUILD_PATH: "." # default value when not using subfolders
-  NODE_ENV: "production"
+  NODE_VERSION: '20.x'
+  PORT: 5001
+  DEPLOY_PATH: '/var/www/radit-porto-web'
 
 jobs:
   deploy:
-    name: Deploy to VPS
+    name: Deploy to Production
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy to VPS
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to Production Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "./*"
-          target: "/root/porto-radit"
+          source: "dist/,package.json,package-lock.json"
+          target: "${{ env.DEPLOY_PATH }}"
+          rm: true
           
-      - name: Build and Start on VPS
+      - name: Configure and Start Production Server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            cd /root/porto-radit
-            npm install
-            npm run build
-            npm install pm2 -g
-            pm2 delete "landing-page:demo" || true
-            pm2 start ecosystem.config.json --env production
+            # Navigate to project directory
+            cd ${{ env.DEPLOY_PATH }}
+
+            # Cleanup old files but keep necessary ones
+            find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name '.' ! -name '..' -exec rm -rf {} +
+
+            # Install production dependencies
+            npm ci --production
+
+            # Install PM2 globally if not present
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+
+            # Stop and delete any existing instances
+            pm2 delete "radit-porto-web" || true
+            
+            # Clean up any old processes on port 5001
+            if lsof -Pi :5001 -sTCP:LISTEN -t >/dev/null ; then
+              kill -9 $(lsof -t -i:5001) || true
+            fi
+
+            # Start new PM2 instance
+            pm2 start npm --name "radit-porto-web" -- start -- --port ${{ env.PORT }} --host 0.0.0.0
+            
+            # Save PM2 configuration and ensure startup
             pm2 save
             pm2 startup
