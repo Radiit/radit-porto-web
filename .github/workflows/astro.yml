@@ -67,21 +67,23 @@ jobs:
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            # Navigate to project directory
+            set -e
+
+            echo "Navigating to project directory..."
             cd ${{ env.DEPLOY_PATH }}
 
-            # Cleanup old files but keep necessary ones
+            echo "Cleaning up old files..."
             find . -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name 'astro.config.mjs' ! -name '.' ! -name '..' -exec rm -rf {} +
 
-            # Install production dependencies
-            npm ci --production
+            echo "Installing production dependencies..."
+            npm ci --omit=dev
 
-            # Install PM2 globally if not present
+            echo "Setting up PM2..."
             if ! command -v pm2 &> /dev/null; then
               npm install -g pm2
             fi
 
-            # Create package.json script for preview
+            echo "Updating package.json scripts..."
             node -e '
               const fs = require("fs");
               const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -90,26 +92,34 @@ jobs:
               fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
             '
 
-            # Stop any existing process
-            pm2 delete radit-porto-web || true
-            
-            # Clean up any old processes on port 5001
+            echo "Stopping existing PM2 processes..."
+            pm2 describe radit-porto-web > /dev/null && pm2 delete radit-porto-web || true
+
+            echo "Cleaning up port 5001..."
             if lsof -Pi :5001 -sTCP:LISTEN -t >/dev/null ; then
               kill -9 $(lsof -t -i:5001) || true
             fi
 
-            # Start with PM2 using npm
-            NODE_ENV=production pm2 start npm --name "radit-porto-web" -- run preview
+            echo "Starting application with PM2..."
+            cd ${{ env.DEPLOY_PATH }} && \
+            NODE_ENV=production \
+            pm2 start npm --name "radit-porto-web" -- run preview
 
-            # Save PM2 configuration
+            echo "Saving PM2 configuration..."
             pm2 save --force
 
-            # Setup PM2 to start on system boot and run the generated command
-            sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp /root
-            sudo systemctl enable pm2-root
+            echo "Setting up PM2 startup..."
+            pm2 startup systemd -u root --hp /root || true
+            systemctl enable pm2-root || true
 
-            # Verify the process is running
+            echo "Waiting for application to start..."
+            sleep 5
+
+            echo "Checking application status..."
             pm2 list
+            pm2 logs radit-porto-web --lines 10 || true
             
-            # Check if the port is listening
-            netstat -tlpn | grep 5001
+            echo "Checking port status..."
+            netstat -tlpn | grep 5001 || true
+            
+            echo "Deployment complete!"
