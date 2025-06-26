@@ -55,7 +55,7 @@ jobs:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "dist/,package.json,package-lock.json,astro.config.mjs"
+          source: "dist/,package.json,package-lock.json"
           target: "${{ env.DEPLOY_PATH }}"
           rm: true
           
@@ -71,6 +71,7 @@ jobs:
 
             echo "Setting up PM2 globally first..."
             npm install -g pm2@latest
+            npm install -g serve
 
             echo "Stopping existing PM2 processes..."
             pm2 delete all || true
@@ -85,24 +86,42 @@ jobs:
             mkdir -p ${{ env.DEPLOY_PATH }}
             cd ${{ env.DEPLOY_PATH }}
 
-            echo "Installing production dependencies..."
-            npm ci --omit=dev
+            echo "Creating server file..."
+            cat > server.js << 'EOL'
+            const express = require('express');
+            const path = require('path');
+            const app = express();
+
+            app.use(express.static(path.join(__dirname, 'dist')));
+
+            app.get('*', (req, res) => {
+              res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+            });
+
+            const port = process.env.PORT || 5001;
+            app.listen(port, '127.0.0.1', () => {
+              console.log(`Server running at http://127.0.0.1:${port}`);
+            });
+            EOL
+
+            echo "Installing express..."
+            npm install express
 
             echo "Creating PM2 ecosystem file..."
-            cat > ecosystem.config.cjs << 'EOL'
+            cat > ecosystem.config.js << 'EOL'
             module.exports = {
               apps: [{
                 name: 'radit-porto-web',
+                script: 'server.js',
                 cwd: '/var/www/radit-porto-web',
-                script: './node_modules/astro/dist/cli/index.js',
-                args: 'preview --host 127.0.0.1 --port 5001',
                 env: {
                   NODE_ENV: 'production',
                   PORT: '5001'
                 },
                 watch: false,
-                autorestart: true,
-                max_restarts: 5,
+                instances: 1,
+                exec_mode: 'fork',
+                max_restarts: 10,
                 min_uptime: '5s'
               }]
             }
@@ -110,7 +129,7 @@ jobs:
 
             echo "Starting application with PM2..."
             cd ${{ env.DEPLOY_PATH }}
-            pm2 start ecosystem.config.cjs
+            pm2 start ecosystem.config.js
 
             echo "Saving PM2 configuration..."
             pm2 save --force
@@ -125,9 +144,6 @@ jobs:
             echo "Checking application status..."
             pm2 list
             pm2 logs --lines 20 || true
-            
-            echo "Checking port status..."
-            netstat -tlpn | grep 5001 || true
             
             echo "Testing application..."
             curl -v http://127.0.0.1:5001/ || true
