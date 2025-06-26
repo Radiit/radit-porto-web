@@ -68,28 +68,8 @@ jobs:
           script: |
             set -e
 
-            echo "Ensuring deploy directory exists..."
-            mkdir -p ${{ env.DEPLOY_PATH }}
-            cd ${{ env.DEPLOY_PATH }}
-
-            echo "Cleaning up old files..."
-            find ${{ env.DEPLOY_PATH }} -maxdepth 1 ! -name 'dist' ! -name 'package.json' ! -name 'package-lock.json' ! -name 'astro.config.mjs' ! -name '.' ! -name '..' -exec rm -rf {} +
-
-            echo "Installing production dependencies..."
-            cd ${{ env.DEPLOY_PATH }} && npm ci --omit=dev
-
-            echo "Setting up PM2..."
+            echo "Setting up PM2 globally first..."
             npm install -g pm2@latest
-
-            echo "Updating package.json scripts..."
-            cd ${{ env.DEPLOY_PATH }} && \
-            node -e '
-              const fs = require("fs");
-              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-              if (!pkg.scripts) pkg.scripts = {};
-              pkg.scripts.preview = "astro preview --host 127.0.0.1 --port 5001";
-              fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
-            '
 
             echo "Stopping existing PM2 processes..."
             pm2 delete radit-porto-web || true
@@ -100,14 +80,30 @@ jobs:
               kill -9 $(lsof -t -i:5001) || true
             fi
 
+            echo "Ensuring deploy directory exists..."
+            mkdir -p ${{ env.DEPLOY_PATH }}
+            cd ${{ env.DEPLOY_PATH }}
+
+            echo "Installing production dependencies..."
+            npm ci --omit=dev
+
+            echo "Updating package.json scripts..."
+            node -e '
+              const fs = require("fs");
+              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+              if (!pkg.scripts) pkg.scripts = {};
+              pkg.scripts.preview = "astro preview --host 127.0.0.1 --port 5001";
+              fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+            '
+
             echo "Creating PM2 ecosystem file..."
-            cat > ${{ env.DEPLOY_PATH }}/ecosystem.config.cjs << 'EOL'
+            cat > ecosystem.config.cjs << 'EOL'
             module.exports = {
               apps: [{
                 name: 'radit-porto-web',
                 cwd: '/var/www/radit-porto-web',
-                script: '/var/www/radit-porto-web/node_modules/.bin/astro',
-                args: 'preview --host 127.0.0.1 --port 5001',
+                script: 'npm',
+                args: 'run preview',
                 env: {
                   NODE_ENV: 'production',
                   PORT: '5001'
@@ -119,7 +115,6 @@ jobs:
             EOL
 
             echo "Starting application with PM2..."
-            cd ${{ env.DEPLOY_PATH }} && \
             pm2 start ecosystem.config.cjs
 
             echo "Saving PM2 configuration..."
