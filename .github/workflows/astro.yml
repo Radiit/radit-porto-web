@@ -81,23 +81,14 @@ jobs:
               npm install -g pm2
             fi
 
-            # Create ecosystem file
-            cat > ecosystem.config.js << 'EOL'
-            module.exports = {
-              apps: [{
-                name: 'radit-porto-web',
-                cwd: '/var/www/radit-porto-web',
-                script: './node_modules/astro/astro.js',
-                args: 'preview --host 127.0.0.1 --port 5001',
-                env: {
-                  NODE_ENV: 'production',
-                  PORT: '5001'
-                },
-                watch: false,
-                autorestart: true
-              }]
-            }
-            EOL
+            # Create package.json script for preview
+            node -e '
+              const fs = require("fs");
+              const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+              if (!pkg.scripts) pkg.scripts = {};
+              pkg.scripts.preview = "astro preview --host 127.0.0.1 --port 5001";
+              fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+            '
 
             # Stop any existing process
             pm2 delete radit-porto-web || true
@@ -107,14 +98,15 @@ jobs:
               kill -9 $(lsof -t -i:5001) || true
             fi
 
-            # Start with PM2
-            pm2 start ecosystem.config.js
-            
-            # Save PM2 configuration
-            pm2 save
+            # Start with PM2 using npm
+            NODE_ENV=production pm2 start npm --name "radit-porto-web" -- run preview
 
-            # Setup PM2 to start on system boot
-            pm2 startup | tail -n 1 | bash
+            # Save PM2 configuration
+            pm2 save --force
+
+            # Setup PM2 to start on system boot and run the generated command
+            sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp /root
+            sudo systemctl enable pm2-root
 
             # Verify the process is running
             pm2 list
