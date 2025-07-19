@@ -160,7 +160,7 @@ jobs:
             
             # Create PM2 ecosystem file with enhanced configuration
             echo "Creating PM2 ecosystem file..."
-            cat > ecosystem.config.js << 'EOL'
+            cat > ecosystem.config.cjs << 'EOL'
             module.exports = {
               apps: [{
                 name: '${{ env.APP_NAME }}',
@@ -196,7 +196,7 @@ jobs:
             # Start application with PM2
             echo "Starting application with PM2..."
             cd ${{ env.DEPLOY_PATH }}
-            pm2 start ecosystem.config.js
+            pm2 start ecosystem.config.cjs
             
             # Wait for application to be ready
             echo "Waiting for application to be ready..."
