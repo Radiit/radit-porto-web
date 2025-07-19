@@ -28,6 +28,7 @@ env:
   NODE_VERSION: '20.x'
   PORT: 5001
   DEPLOY_PATH: '/var/www/radit-porto-web'
+  APP_NAME: 'radit-porto-web'
 
 jobs:
   deploy:
@@ -59,7 +60,7 @@ jobs:
           target: "${{ env.DEPLOY_PATH }}"
           rm: true
           
-      - name: Configure and Start Production Server
+      - name: Configure and Start Production Server with PM2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: "43.134.87.90"
@@ -68,84 +69,171 @@ jobs:
           command_timeout: "30m"
           script: |
             set -e
-
-            echo "Setting up PM2 globally first..."
-            npm install -g pm2@latest
-            npm install -g serve
-
+            
+            echo "=== Starting PM2-based deployment ==="
+            
+            # Install PM2 globally if not already installed
+            echo "Installing PM2 globally..."
+            npm install -g pm2@latest || true
+            
+            # Stop and clean up existing processes
             echo "Stopping existing PM2 processes..."
-            pm2 delete all || true
+            pm2 delete ${{ env.APP_NAME }} || true
             pm2 kill || true
-
-            echo "Cleaning up port 5001..."
-            if lsof -Pi :5001 -sTCP:LISTEN -t >/dev/null ; then
-              kill -9 $(lsof -t -i:5001) || true
+            
+            # Clean up port if occupied
+            echo "Cleaning up port ${{ env.PORT }}..."
+            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null ; then
+              kill -9 $(lsof -t -i:${{ env.PORT }}) || true
             fi
-
+            
+            # Ensure deploy directory exists
             echo "Ensuring deploy directory exists..."
             mkdir -p ${{ env.DEPLOY_PATH }}
             cd ${{ env.DEPLOY_PATH }}
-
-            echo "Creating server file..."
+            
+            # Create enhanced server file with better error handling
+            echo "Creating enhanced server file..."
             cat > server.js << 'EOL'
             const express = require('express');
             const path = require('path');
+            const fs = require('fs');
+            
             const app = express();
-
-            app.use(express.static(path.join(__dirname, 'dist')));
-
-            app.get('*', (req, res) => {
-              res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+            const PORT = process.env.PORT || 5001;
+            
+            // Health check endpoint
+            app.get('/health', (req, res) => {
+              res.status(200).json({
+                status: 'healthy',
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime(),
+                memory: process.memoryUsage()
+              });
             });
-
-            const port = process.env.PORT || 5001;
-            app.listen(port, '127.0.0.1', () => {
-              console.log(`Server running at http://127.0.0.1:${port}`);
+            
+            // Serve static files
+            app.use(express.static(path.join(__dirname, 'dist')));
+            
+            // Handle all routes for SPA
+            app.get('*', (req, res) => {
+              const indexPath = path.join(__dirname, 'dist', 'index.html');
+              if (fs.existsSync(indexPath)) {
+                res.sendFile(indexPath);
+              } else {
+                res.status(404).send('Application not found');
+              }
+            });
+            
+            // Error handling middleware
+            app.use((err, req, res, next) => {
+              console.error('Server error:', err);
+              res.status(500).send('Internal Server Error');
+            });
+            
+            const server = app.listen(PORT, '127.0.0.1', () => {
+              console.log(`🚀 Server running at http://127.0.0.1:${PORT}`);
+              console.log(`📊 Health check available at http://127.0.0.1:${PORT}/health`);
+            });
+            
+            // Graceful shutdown
+            process.on('SIGTERM', () => {
+              console.log('SIGTERM received, shutting down gracefully');
+              server.close(() => {
+                console.log('Process terminated');
+                process.exit(0);
+              });
+            });
+            
+            process.on('SIGINT', () => {
+              console.log('SIGINT received, shutting down gracefully');
+              server.close(() => {
+                console.log('Process terminated');
+                process.exit(0);
+              });
             });
             EOL
-
-            echo "Installing express..."
+            
+            # Install express dependency
+            echo "Installing express dependency..."
             npm install express
-
+            
+            # Create PM2 ecosystem file with enhanced configuration
             echo "Creating PM2 ecosystem file..."
             cat > ecosystem.config.js << 'EOL'
             module.exports = {
               apps: [{
-                name: 'radit-porto-web',
+                name: '${{ env.APP_NAME }}',
                 script: 'server.js',
-                cwd: '/var/www/radit-porto-web',
+                cwd: '${{ env.DEPLOY_PATH }}',
                 env: {
                   NODE_ENV: 'production',
-                  PORT: '5001'
+                  PORT: '${{ env.PORT }}'
                 },
                 watch: false,
                 instances: 1,
                 exec_mode: 'fork',
                 max_restarts: 10,
-                min_uptime: '5s'
+                min_uptime: '10s',
+                max_memory_restart: '500M',
+                error_file: './logs/err.log',
+                out_file: './logs/out.log',
+                log_file: './logs/combined.log',
+                time: true,
+                autorestart: true,
+                cron_restart: '0 2 * * *', // Restart daily at 2 AM
+                kill_timeout: 5000,
+                wait_ready: true,
+                listen_timeout: 10000
               }]
             }
             EOL
-
+            
+            # Create logs directory
+            echo "Creating logs directory..."
+            mkdir -p ${{ env.DEPLOY_PATH }}/logs
+            
+            # Start application with PM2
             echo "Starting application with PM2..."
             cd ${{ env.DEPLOY_PATH }}
             pm2 start ecosystem.config.js
-
+            
+            # Wait for application to be ready
+            echo "Waiting for application to be ready..."
+            sleep 10
+            
+            # Check application status
+            echo "Checking PM2 application status..."
+            pm2 list
+            pm2 show ${{ env.APP_NAME }}
+            
+            # Test application health
+            echo "Testing application health..."
+            for i in {1..5}; do
+              if curl -f http://127.0.0.1:${{ env.PORT }}/health > /dev/null 2>&1; then
+                echo "✅ Application is healthy and responding"
+                break
+              else
+                echo "⏳ Waiting for application to be ready... (attempt $i/5)"
+                sleep 5
+              fi
+            done
+            
+            # Save PM2 configuration
             echo "Saving PM2 configuration..."
             pm2 save --force
-
-            echo "Setting up PM2 startup..."
+            
+            # Setup PM2 startup script
+            echo "Setting up PM2 startup script..."
             env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp /root || true
             systemctl enable pm2-root || true
-
-            echo "Waiting for application to start..."
-            sleep 5
-
-            echo "Checking application status..."
-            pm2 list
-            pm2 logs --lines 20 || true
             
-            echo "Testing application..."
-            curl -v http://127.0.0.1:5001/ || true
+            # Display recent logs
+            echo "Recent application logs:"
+            pm2 logs ${{ env.APP_NAME }} --lines 10 || true
             
-            echo "Deployment complete!"
+            echo "=== Deployment completed successfully! ==="
+            echo "🌐 Application URL: http://43.134.87.90:${{ env.PORT }}"
+            echo "📊 Health Check: http://43.134.87.90:${{ env.PORT }}/health"
+            echo "📋 PM2 Status: pm2 list"
+            echo "📝 PM2 Logs: pm2 logs ${{ env.APP_NAME }}"
