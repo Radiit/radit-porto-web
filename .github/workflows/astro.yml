@@ -1,8 +1,8 @@
-# Sample workflow for building and deploying an Astro site using Docker
+# Sample workflow for building and deploying an Astro site using Docker Compose
 #
 # To get started with Astro see: https://docs.astro.build/en/getting-started/
 #
-name: Deploy Astro site to Production (Docker)
+name: Deploy Astro site to Production (Docker Compose)
 
 on:
   # Runs on pushes targeting the default branch
@@ -34,7 +34,7 @@ env:
 
 jobs:
   deploy:
-    name: Deploy to Production (Docker)
+    name: Deploy to Production (Docker Compose)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -62,7 +62,7 @@ jobs:
           target: "${{ env.DEPLOY_PATH }}"
           rm: true
           
-      - name: Deploy Docker Container
+      - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: "43.134.87.90"
@@ -72,50 +72,38 @@ jobs:
           script: |
             set -e
             
-            echo "=== Starting Docker-based deployment ==="
+            echo "=== Starting Docker Compose deployment ==="
             
             # Navigate to deploy directory
             cd ${{ env.DEPLOY_PATH }}
             
-            # Stop and remove existing container
-            echo "Stopping and removing existing container..."
-            docker stop ${{ env.DOCKER_CONTAINER_NAME }} || true
-            docker rm ${{ env.DOCKER_CONTAINER_NAME }} || true
+            # Stop and remove existing containers
+            echo "Stopping existing containers..."
+            docker-compose -f docker-compose.simple.yml down || true
             
-            # Remove existing image
-            echo "Removing existing Docker image..."
+            # Remove existing images
+            echo "Removing existing images..."
             docker rmi ${{ env.DOCKER_IMAGE_NAME }} || true
             
             # Clean up any dangling images
             echo "Cleaning up dangling images..."
             docker image prune -f || true
             
-            # Build new Docker image
-            echo "Building new Docker image..."
-            docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+            # Build and start with docker-compose
+            echo "Building and starting with docker-compose..."
+            docker-compose -f docker-compose.simple.yml up -d --build
             
-            # Run new container
-            echo "Running new Docker container..."
-            docker run -d \
-              --name ${{ env.DOCKER_CONTAINER_NAME }} \
-              --restart unless-stopped \
-              -p ${{ env.PORT }}:4321 \
-              -e HOST=0.0.0.0 \
-              -e PORT=4321 \
-              -e BASE_URL=/ \
-              ${{ env.DOCKER_IMAGE_NAME }}
-            
-            # Wait for container to start
-            echo "Waiting for container to start..."
-            sleep 10
+            # Wait for containers to start
+            echo "Waiting for containers to start..."
+            sleep 15
             
             # Check container status
             echo "Checking container status..."
-            docker ps -a | grep ${{ env.DOCKER_CONTAINER_NAME }}
+            docker-compose -f docker-compose.simple.yml ps
             
             # Check container logs
             echo "Container logs:"
-            docker logs ${{ env.DOCKER_CONTAINER_NAME }} --tail 20 || true
+            docker-compose -f docker-compose.simple.yml logs --tail 20 || true
             
             # Test application health
             echo "Testing application health..."
@@ -131,14 +119,11 @@ jobs:
             
             # Display container information
             echo "Container information:"
-            docker inspect ${{ env.DOCKER_CONTAINER_NAME }} | grep -E "(Status|IPAddress|PortBindings)" || true
+            docker-compose -f docker-compose.simple.yml ps
+            docker-compose -f docker-compose.simple.yml logs --tail 10
             
-            # Show running containers
-            echo "Running containers:"
-            docker ps
-            
-            echo "=== Docker deployment completed successfully! ==="
-            echo "🌐 Application URL: http://43.134.87.90:${{ env.PORT }}"
-            echo "📋 Container Status: docker ps"
-            echo "📝 Container Logs: docker logs ${{ env.DOCKER_CONTAINER_NAME }}"
-            echo "🔧 Container Shell: docker exec -it ${{ env.DOCKER_CONTAINER_NAME }} sh"
+            echo "=== Docker Compose deployment completed successfully! ==="
+            echo "🌐 Application URL: https://radit.is-a.dev"
+            echo "📋 Container Status: docker-compose -f docker-compose.simple.yml ps"
+            echo "📝 Container Logs: docker-compose -f docker-compose.simple.yml logs"
+            echo "🔧 Container Shell: docker-compose -f docker-compose.simple.yml exec astro-app sh"

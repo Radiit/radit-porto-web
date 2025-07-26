@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Astro application
+  astro-app:
+    build: .
+    container_name: radit-porto-web-container
+    restart: unless-stopped
+    ports:
+      - "5001:4321"  # Expose port 5001 for Nginx proxy
+    environment:
+      - HOST=0.0.0.0
+      - PORT=4321
+      - BASE_URL=/
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4321/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx reverse proxy (optional - you can use your existing Nginx)
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: radit-porto-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:5001"  # Expose on different port to avoid conflict
+    depends_on:
+      - astro-app
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  app-network:
+    driver: bridge 

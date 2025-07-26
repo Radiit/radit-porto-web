@@ -11,12 +11,23 @@ export default defineConfig({
 
   server: {
     host: true,
-    allowedHosts: ["radit.is-a.dev"],
+    allowedHosts: ["radit.is-a.dev", "localhost", "127.0.0.1"],
   },
   preview: {
-    host: '127.0.0.1',
-    port: 5001,
-    allowedHosts: ["radit.is-a.dev"],
+    host: '0.0.0.0',
+    port: 4321,
+    allowedHosts: ["radit.is-a.dev", "localhost", "127.0.0.1", "43.134.87.90"],
+  },
+  vite: {
+    preview: {
+      host: '0.0.0.0',
+      port: 4321,
+      allowedHosts: ["radit.is-a.dev", "localhost", "127.0.0.1", "43.134.87.90"],
+    },
+    server: {
+      host: '0.0.0.0',
+      allowedHosts: ["radit.is-a.dev", "localhost", "127.0.0.1", "43.134.87.90"],
+    }
   },
   integrations: [mdx(), sitemap(), solidJs(), tailwind({ applyBaseStyles: false })],
 })
