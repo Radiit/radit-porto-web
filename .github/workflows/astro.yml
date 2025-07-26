@@ -1,8 +1,8 @@
-# Sample workflow for building and deploying an Astro site to GitHub Pages
+# Sample workflow for building and deploying an Astro site using Docker
 #
 # To get started with Astro see: https://docs.astro.build/en/getting-started/
 #
-name: Deploy Astro site to Production
+name: Deploy Astro site to Production (Docker)
 
 on:
   # Runs on pushes targeting the default branch
@@ -29,10 +29,12 @@ env:
   PORT: 5001
   DEPLOY_PATH: '/var/www/radit-porto-web'
   APP_NAME: 'radit-porto-web'
+  DOCKER_IMAGE_NAME: 'radit-porto-web'
+  DOCKER_CONTAINER_NAME: 'radit-porto-web-container'
 
 jobs:
   deploy:
-    name: Deploy to Production
+    name: Deploy to Production (Docker)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -50,17 +52,17 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Deploy to Production Server
+      - name: Copy files to Production Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: "43.134.87.90"
           username: "root"
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "dist/,package.json,package-lock.json"
+          source: "."
           target: "${{ env.DEPLOY_PATH }}"
           rm: true
           
-      - name: Configure and Start Production Server with PM2
+      - name: Deploy Docker Container
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: "43.134.87.90"
@@ -70,170 +72,73 @@ jobs:
           script: |
             set -e
             
-            echo "=== Starting PM2-based deployment ==="
+            echo "=== Starting Docker-based deployment ==="
             
-            # Install PM2 globally if not already installed
-            echo "Installing PM2 globally..."
-            npm install -g pm2@latest || true
-            
-            # Stop and clean up existing processes
-            echo "Stopping existing PM2 processes..."
-            pm2 delete ${{ env.APP_NAME }} || true
-            pm2 kill || true
-            
-            # Clean up port if occupied
-            echo "Cleaning up port ${{ env.PORT }}..."
-            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null ; then
-              kill -9 $(lsof -t -i:${{ env.PORT }}) || true
-            fi
-            
-            # Ensure deploy directory exists
-            echo "Ensuring deploy directory exists..."
-            mkdir -p ${{ env.DEPLOY_PATH }}
+            # Navigate to deploy directory
             cd ${{ env.DEPLOY_PATH }}
             
-            # Create enhanced server file with better error handling
-            echo "Creating enhanced server file..."
-            cat > server.js << 'EOL'
-            const express = require('express');
-            const path = require('path');
-            const fs = require('fs');
+            # Stop and remove existing container
+            echo "Stopping and removing existing container..."
+            docker stop ${{ env.DOCKER_CONTAINER_NAME }} || true
+            docker rm ${{ env.DOCKER_CONTAINER_NAME }} || true
             
-            const app = express();
-            const PORT = process.env.PORT || 5001;
+            # Remove existing image
+            echo "Removing existing Docker image..."
+            docker rmi ${{ env.DOCKER_IMAGE_NAME }} || true
             
-            // Health check endpoint
-            app.get('/health', (req, res) => {
-              res.status(200).json({
-                status: 'healthy',
-                timestamp: new Date().toISOString(),
-                uptime: process.uptime(),
-                memory: process.memoryUsage()
-              });
-            });
+            # Clean up any dangling images
+            echo "Cleaning up dangling images..."
+            docker image prune -f || true
             
-            // Serve static files
-            app.use(express.static(path.join(__dirname, 'dist')));
+            # Build new Docker image
+            echo "Building new Docker image..."
+            docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
             
-            // Handle all routes for SPA
-            app.get('*', (req, res) => {
-              const indexPath = path.join(__dirname, 'dist', 'index.html');
-              if (fs.existsSync(indexPath)) {
-                res.sendFile(indexPath);
-              } else {
-                res.status(404).send('Application not found');
-              }
-            });
+            # Run new container
+            echo "Running new Docker container..."
+            docker run -d \
+              --name ${{ env.DOCKER_CONTAINER_NAME }} \
+              --restart unless-stopped \
+              -p ${{ env.PORT }}:4321 \
+              -e HOST=0.0.0.0 \
+              -e PORT=4321 \
+              -e BASE_URL=/ \
+              ${{ env.DOCKER_IMAGE_NAME }}
             
-            // Error handling middleware
-            app.use((err, req, res, next) => {
-              console.error('Server error:', err);
-              res.status(500).send('Internal Server Error');
-            });
-            
-            const server = app.listen(PORT, '127.0.0.1', () => {
-              console.log(`🚀 Server running at http://127.0.0.1:${PORT}`);
-              console.log(`📊 Health check available at http://127.0.0.1:${PORT}/health`);
-            });
-            
-            // Graceful shutdown
-            process.on('SIGTERM', () => {
-              console.log('SIGTERM received, shutting down gracefully');
-              server.close(() => {
-                console.log('Process terminated');
-                process.exit(0);
-              });
-            });
-            
-            process.on('SIGINT', () => {
-              console.log('SIGINT received, shutting down gracefully');
-              server.close(() => {
-                console.log('Process terminated');
-                process.exit(0);
-              });
-            });
-            EOL
-            
-            # Install express dependency
-            echo "Installing express dependency..."
-            npm install express
-            
-            # Create PM2 ecosystem file with enhanced configuration
-            echo "Creating PM2 ecosystem file..."
-            cat > ecosystem.config.cjs << 'EOL'
-            module.exports = {
-              apps: [{
-                name: '${{ env.APP_NAME }}',
-                script: 'server.js',
-                cwd: '${{ env.DEPLOY_PATH }}',
-                env: {
-                  NODE_ENV: 'production',
-                  PORT: '${{ env.PORT }}'
-                },
-                watch: false,
-                instances: 1,
-                exec_mode: 'fork',
-                max_restarts: 10,
-                min_uptime: '10s',
-                max_memory_restart: '500M',
-                error_file: './logs/err.log',
-                out_file: './logs/out.log',
-                log_file: './logs/combined.log',
-                time: true,
-                autorestart: true,
-                cron_restart: '0 2 * * *', // Restart daily at 2 AM
-                kill_timeout: 5000,
-                wait_ready: true,
-                listen_timeout: 10000
-              }]
-            }
-            EOL
-            
-            # Create logs directory
-            echo "Creating logs directory..."
-            mkdir -p ${{ env.DEPLOY_PATH }}/logs
-            
-            # Start application with PM2
-            echo "Starting application with PM2..."
-            cd ${{ env.DEPLOY_PATH }}
-            pm2 start ecosystem.config.cjs
-            
-            # Wait for application to be ready
-            echo "Waiting for application to be ready..."
+            # Wait for container to start
+            echo "Waiting for container to start..."
             sleep 10
             
-            # Check application status
-            echo "Checking PM2 application status..."
-            pm2 list
-            pm2 show ${{ env.APP_NAME }}
+            # Check container status
+            echo "Checking container status..."
+            docker ps -a | grep ${{ env.DOCKER_CONTAINER_NAME }}
+            
+            # Check container logs
+            echo "Container logs:"
+            docker logs ${{ env.DOCKER_CONTAINER_NAME }} --tail 20 || true
             
             # Test application health
             echo "Testing application health..."
-            for i in {1..5}; do
-              if curl -f http://127.0.0.1:${{ env.PORT }}/health > /dev/null 2>&1; then
+            for i in {1..10}; do
+              if curl -f http://127.0.0.1:${{ env.PORT }}/ > /dev/null 2>&1; then
                 echo "✅ Application is healthy and responding"
                 break
               else
-                echo "⏳ Waiting for application to be ready... (attempt $i/5)"
+                echo "⏳ Waiting for application to be ready... (attempt $i/10)"
                 sleep 5
               fi
             done
             
-            # Save PM2 configuration
-            echo "Saving PM2 configuration..."
-            pm2 save --force
+            # Display container information
+            echo "Container information:"
+            docker inspect ${{ env.DOCKER_CONTAINER_NAME }} | grep -E "(Status|IPAddress|PortBindings)" || true
             
-            # Setup PM2 startup script
-            echo "Setting up PM2 startup script..."
-            env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp /root || true
-            systemctl enable pm2-root || true
+            # Show running containers
+            echo "Running containers:"
+            docker ps
             
-            # Display recent logs
-            echo "Recent application logs:"
-            pm2 logs ${{ env.APP_NAME }} --lines 10 || true
-            
-            echo "=== Deployment completed successfully! ==="
+            echo "=== Docker deployment completed successfully! ==="
             echo "🌐 Application URL: http://43.134.87.90:${{ env.PORT }}"
-            echo "📊 Health Check: http://43.134.87.90:${{ env.PORT }}/health"
-            echo "📋 PM2 Status: pm2 list"
-            echo "📝 PM2 Logs: pm2 logs ${{ env.APP_NAME }}"
+            echo "📋 Container Status: docker ps"
+            echo "📝 Container Logs: docker logs ${{ env.DOCKER_CONTAINER_NAME }}"
+            echo "🔧 Container Shell: docker exec -it ${{ env.DOCKER_CONTAINER_NAME }} sh"
