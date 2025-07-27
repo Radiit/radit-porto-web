@@ -7,7 +7,10 @@ interface Props {
   image?: string
 }
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+// Safely create canonical URL
+const canonicalURL = Astro.site 
+  ? new URL(Astro.url.pathname, Astro.site)
+  : Astro.url
 
 const { title, description, image = "/open-graph.jpg" } = Astro.props
 ---
@@ -48,7 +51,7 @@ const { title, description, image = "/open-graph.jpg" } = Astro.props
 <link rel="sitemap" href="/sitemap-index.xml" />
 
 <!-- RSS Feed -->
-<link rel="alternate" type="application/rss+xml" title={title} href={`${Astro.site}rss.xml`}/>
+<link rel="alternate" type="application/rss+xml" title={title} href={Astro.site ? `${Astro.site}rss.xml` : "/rss.xml"}/>
 
 <!-- Global Scripts -->
 <script is:inline src="/js/theme.js"></script>
