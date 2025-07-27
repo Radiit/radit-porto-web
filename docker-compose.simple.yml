@@ -4,7 +4,6 @@ services:
   # Astro application only
   astro-app:
     build: .
-    container_name: radit-porto-web-container
     restart: unless-stopped
     ports:
       - "5001:4321"  # Expose port 5001 for existing Nginx proxy
