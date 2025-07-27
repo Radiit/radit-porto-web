@@ -1,13 +1,8 @@
 ---
-import { getCollection } from "astro:content"
 import PageLayout from "@layouts/PageLayout.astro"
 import TopLayout from "@layouts/TopLayout.astro"
 import BottomLayout from "@layouts/BottomLayout.astro"
 import { BLOG } from "@consts"
-
-const posts = (await getCollection("blog"))
-  .filter(post => !post.data.draft)
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
 ---
 
 <PageLayout title={BLOG.TITLE} description={BLOG.DESCRIPTION}>
