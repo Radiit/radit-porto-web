@@ -77,17 +77,27 @@ jobs:
             # Navigate to deploy directory
             cd ${{ env.DEPLOY_PATH }}
             
-            # Stop and remove existing containers
+            # Force stop and remove any existing container with the same name
+            echo "Force removing existing container..."
+            docker rm -f ${{ env.DOCKER_CONTAINER_NAME }} || true
+            
+            # Stop and remove existing containers from docker-compose
             echo "Stopping existing containers..."
             docker-compose -f docker-compose.simple.yml down || true
+            
+            # Remove any other containers that might conflict
+            echo "Cleaning up any conflicting containers..."
+            docker ps -a | grep ${{ env.DOCKER_CONTAINER_NAME }} | awk '{print $1}' | xargs -r docker rm -f || true
             
             # Remove existing images
             echo "Removing existing images..."
             docker rmi ${{ env.DOCKER_IMAGE_NAME }} || true
+            docker rmi radit-porto-web_astro-app || true
             
-            # Clean up any dangling images
-            echo "Cleaning up dangling images..."
+            # Clean up any dangling images and containers
+            echo "Cleaning up dangling images and containers..."
             docker image prune -f || true
+            docker container prune -f || true
             
             # Build and start with docker-compose
             echo "Building and starting with docker-compose..."
