@@ -1,7 +1,7 @@
 ---
 title: "SahabatPeduli (Web3)"
 summary: "A decentralized application built during the ICP Hub Hackathon to enable transparent and secure community donation tracking."
-date: "2023-06-01"
+date: "2024-06-01"
 draft: false
 tags:
   - ICP Ledger

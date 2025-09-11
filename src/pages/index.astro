@@ -37,6 +37,36 @@ const projects = (await getCollection("projects"))
 
   <script is:inline src="/js/bg.js"></script>
   
+  <!-- CTA Tracking Script -->
+  <script is:inline>
+    // Simple CTA tracking function
+    function trackCTAClick(label, category = 'CTA') {
+      // Google Analytics tracking
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'cta_click', {
+          'event_category': category,
+          'event_label': label,
+          'value': 1
+        });
+      }
+      
+      // Local storage tracking
+      const existing = JSON.parse(localStorage.getItem('cta_analytics') || '[]');
+      const found = existing.find(stat => stat.label === label);
+      
+      if (found) {
+        found.clicks += 1;
+      } else {
+        existing.push({ label, clicks: 1, category });
+      }
+      
+      localStorage.setItem('cta_analytics', JSON.stringify(existing));
+      
+      // Log to console for debugging
+      console.log(`CTA clicked: ${label} (${category})`);
+    }
+  </script>
+  
   <!-- HERO -->
   <section class="relative h-screen w-full">
     <div id="planetcont" class='animate absolute inset-0 top-1/4 overflow-hidden'>
@@ -62,7 +92,9 @@ const projects = (await getCollection("projects"))
             <!-- <a href='/blog' class='py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend'>
               Read my blog
             </a> -->
-            <a href='/work' class='py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend'>
+            <a href='/work' 
+               class='py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend'
+               onclick="trackCTAClick('View my work', 'CTA');">
               View my work
             </a>
             <!-- <a href="/CV-Radit.pdf" download class="py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend flex items-center gap-2">
@@ -115,7 +147,9 @@ const projects = (await getCollection("projects"))
             <p class="font-semibold text-black dark:text-white">
               Recent posts
             </p>
-            <a href="/blog" class="w-fit col-span-3 group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend">
+            <a href="/blog" 
+               class="w-fit col-span-3 group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend"
+               onclick="trackCTAClick('All posts', 'CTA');">
               <span class="text-black/75 dark:text-white/75 group-hover:text-black group-hover:dark:text-white blend">
                 All posts
               </span>
@@ -163,7 +197,9 @@ const projects = (await getCollection("projects"))
             <p class="font-semibold text-black dark:text-white">
               Recent projects
             </p>
-            <a href="/projects" class="w-fit col-span-3 group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend">
+            <a href="/projects" 
+               class="w-fit col-span-3 group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend"
+               onclick="trackCTAClick('All projects', 'CTA');">
               <span class="text-black/75 dark:text-white/75 group-hover:text-black group-hover:dark:text-white blend">
                 All projects
               </span>
@@ -196,7 +232,10 @@ const projects = (await getCollection("projects"))
                 </span>
               </div>
               <div class="col-span-3 truncate">
-                <a href={social.HREF} target="_blank" class="w-fit col-span-3 group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend">
+                <a href={social.HREF} 
+                   target="_blank" 
+                   class="w-fit col-span-3 group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend"
+                   onclick={`trackCTAClick('${social.NAME}', 'Social');`}>
                   <span class="text-black/75 dark:text-white/75 group-hover:text-black group-hover:dark:text-white blend">
                     {social.TEXT}
                   </span>
@@ -220,6 +259,7 @@ const projects = (await getCollection("projects"))
     text-white shadow-lg hover:shadow-xl transform hover:translate-y-[-2px] 
     transition-all duration-300 ease-in-out border border-white/20
     group relative overflow-hidden"
+    onclick="trackCTAClick('Download CV', 'CTA');"
   >
     <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-400/40 to-purple-400/40 
     opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>

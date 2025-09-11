@@ -18,6 +18,7 @@ export default function ArrowCard({entry, pill}: Props) {
           }
           <div class="text-sm uppercase">
             {formatDate(entry.data.date)}
+            {(entry.data as any).endDate && ` - ${(entry.data as any).endDate}`}
           </div>
         </div>
         <div class="font-semibold mt-3 text-black dark:text-white">

@@ -2,6 +2,7 @@
 title: "Redooceit Waste Management Dashboard"
 summary: "A real-time waste management tracking and analytics dashboard built using modern technologies like Golang, Next.js, and React."
 date: "2025-02-01"
+endDate: "Present"
 draft: false
 tags:
   - Golang
@@ -14,7 +15,10 @@ tags:
 
 ### Redooceit Waste Management Dashboard
 
-As the **CTO and Co-Founder of Redooceit**, I led the development of a scalable digital solution aimed at solving waste management challenges through technology. The dashboard serves as the core interface for monitoring and analyzing waste data in real time.
+![Redooceit Landingpage](/redooceit.png)
+*Redooceit Landing page*
+
+As the **CTO and Co-Founder of [Redooceit](https://redooceit.com/)**, I led the development of a scalable digital solution aimed at solving waste management challenges through technology. The dashboard serves as the core interface for monitoring and analyzing waste data in real time.
 
 #### Key Contributions:
 - Collaborated closely with the UI/UX team to discuss, design, and curate the layout of the Redooceit dashboard, ensuring alignment between user needs and technical feasibility.

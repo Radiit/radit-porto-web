@@ -1,0 +1,69 @@
+---
+import PageLayout from "@layouts/PageLayout.astro"
+import AnalyticsComponent from "@components/Analytics"
+---
+
+<PageLayout title="Analytics" description="CTA Click Analytics Dashboard">
+  <div class="mx-auto max-w-4xl p-5 space-y-8">
+    <div class="text-center">
+      <h1 class="text-3xl font-bold text-black dark:text-white mb-4">
+        CTA Analytics Dashboard
+      </h1>
+      <p class="text-black/75 dark:text-white/75">
+      </p>
+    </div>
+
+    <AnalyticsComponent />
+
+    <div class="bg-white dark:bg-black border border-black/15 dark:border-white/20 rounded-lg p-6">
+      <h3 class="text-lg font-semibold text-black dark:text-white mb-4">
+        How to View Analytics
+      </h3>
+      
+      <div class="space-y-4 text-sm text-black/75 dark:text-white/75">
+        <div>
+          <h4 class="font-semibold text-black dark:text-white mb-2">1. Google Analytics 4</h4>
+          <p>Go to <a href="https://analytics.google.com" target="_blank" class="underline">Google Analytics</a> → Events → All events → cta_click</p>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-black dark:text-white mb-2">2. Browser Console</h4>
+          <p>Open Developer Tools (F12) → Console tab. Each CTA click will be logged.</p>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-black dark:text-white mb-2">3. Local Storage</h4>
+          <p>Open Developer Tools (F12) → Application → Local Storage → cta_analytics</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-black border border-black/15 dark:border-white/20 rounded-lg p-6">
+      <h3 class="text-lg font-semibold text-black dark:text-white mb-4">
+        Tracked CTAs
+      </h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div>
+          <h4 class="font-semibold text-black dark:text-white mb-2">Main CTAs</h4>
+          <ul class="space-y-1 text-black/75 dark:text-white/75">
+            <li>• View my work</li>
+            <li>• All posts</li>
+            <li>• All projects</li>
+            <li>• Download CV</li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="font-semibold text-black dark:text-white mb-2">Social Links</h4>
+          <ul class="space-y-1 text-black/75 dark:text-white/75">
+            <li>• Email</li>
+            <li>• Github</li>
+            <li>• LinkedIn</li>
+            <li>• Discord</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</PageLayout>
