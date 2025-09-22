@@ -2,7 +2,7 @@ import type { Site, Page, Links, Socials } from "@types"
 
 // Global
 export const SITE: Site = {
-  TITLE: "Raditya Aydin — Software Engineer",
+  TITLE: ".is-a.dev",
   DESCRIPTION: "Raditya Aydin is a software engineer (Go, Node.js, Spring Boot) building scalable backends, cloud infrastructure, and modern products. View projects, work, and CV.",
   AUTHOR: "Raditya Aydin",
 }
