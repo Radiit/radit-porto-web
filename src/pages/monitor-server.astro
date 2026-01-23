@@ -1,0 +1,99 @@
+---
+// Hidden page - only accessible by direct URL
+// No meta tags for search engines
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Server Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+        
+        #app-frame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            z-index: 9999;
+        }
+        
+        .loader {
+            border: 3px solid #333;
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loader"></div>
+        <div>Loading...</div>
+    </div>
+    
+    <iframe 
+        id="app-frame"
+        src="http://192.168.0.112:9090/"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-top-navigation"
+    ></iframe>
+
+    <script>
+        const iframe = document.getElementById('app-frame');
+        const loading = document.getElementById('loading');
+        
+        if (iframe && loading) {
+            iframe.addEventListener('load', function() {
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+            });
+            
+            // Hide loading after 5 seconds even if load event doesn't fire
+            setTimeout(() => {
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+    

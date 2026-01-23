@@ -29,7 +29,7 @@ export default defineConfig({
       allowedHosts: "all",
       hmr: {
         host: 'radit.is-a.dev'
-      }
+      },
     },
     define: {
       __VUE_PROD_DEVTOOLS__: false,
