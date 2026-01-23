@@ -35,5 +35,14 @@ export default defineConfig({
       __VUE_PROD_DEVTOOLS__: false,
     },
   },
-  integrations: [mdx(), sitemap(), solidJs(), tailwind({ applyBaseStyles: false })],
+  integrations: [
+    mdx(), 
+    sitemap({
+      filter: (page) => 
+        !page.includes('/monitor-server') && 
+        !page.includes('/penyimpanan-keluarga-imam')
+    }), 
+    solidJs(), 
+    tailwind({ applyBaseStyles: false })
+  ],
 })
