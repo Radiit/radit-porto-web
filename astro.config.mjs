@@ -36,13 +36,13 @@ export default defineConfig({
     },
   },
   integrations: [
-    mdx(), 
+    mdx(),
     sitemap({
-      filter: (page) => 
-        !page.includes('/monitor-server') && 
-        !page.includes('/penyimpanan-keluarga-imam')
-    }), 
-    solidJs(), 
+      filter: (page) =>
+        !page.endsWith('/monitor-server/') &&
+        !page.endsWith('/penyimpanan-keluarga-imam/')
+    }),
+    solidJs(),
     tailwind({ applyBaseStyles: false })
   ],
 })
