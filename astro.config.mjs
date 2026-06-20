@@ -8,33 +8,6 @@ import solidJs from "@astrojs/solid-js"
 export default defineConfig({
   site: "https://radit.is-a.dev",
 
-  server: {
-    host: '0.0.0.0',
-    port: 4321,
-    allowedHosts: /.*/,
-  },
-  preview: {
-    host: '0.0.0.0',
-    port: 4321,
-    allowedHosts: /.*/
-  },
-
-  vite: {
-    server: {
-      host: '0.0.0.0',
-      port: 4321,
-      allowedHosts: /.*/,
-      hmr: {
-        host: 'localhost'
-      }
-    },
-    preview: {
-      host: '0.0.0.0',
-      port: 4321,
-      allowedHosts: /.*/
-    }
-  },
-
   integrations: [
     mdx(),
     sitemap({
